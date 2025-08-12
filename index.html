@@ -1,0 +1,764 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0d1321">
+<title>History Sprint: USA — Zander Edition</title>
+<style>
+  :root{
+    --bg1:#0d1321; --bg2:#1c2541; --card:#111827cc; --text:#e5e7eb; --muted:#9ca3af;
+    --accent:#4f46e5; --accent-2:#22d3ee; --good:#10b981; --bad:#ef4444; --gold:#f59e0b;
+    --shadow: 0 10px 30px rgba(0,0,0,.35), 0 1px 0 rgba(255,255,255,.03) inset;
+    --radius:16px; --radius-sm:12px;
+  }
+  @media (prefers-color-scheme: light) {
+    :root { --bg1:#e8eefc; --bg2:#f5f7ff; --card:#ffffffcc; --text:#111827; --muted:#4b5563; --accent:#3749bf; }
+  }
+  * { box-sizing: border-box; }
+  html,body{height:100%;margin:0;font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial,Apple Color Emoji,Segoe UI Emoji;}
+  body{
+    color:var(--text);
+    background: radial-gradient(1200px 800px at 20% -10%, #15203b 0%, var(--bg1) 55%), linear-gradient(180deg, var(--bg2), var(--bg1));
+    min-height:100dvh; display:flex; align-items:center; justify-content:center;
+  }
+  .wrap{width:min(820px,100%);padding:18px 14px 40px;}
+  .card{background:var(--card); backdrop-filter: blur(10px);
+    border:1px solid rgba(255,255,255,.08); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden;}
+  header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.08);}
+  header .title{font-weight:900; letter-spacing:.3px; line-height:1.1}
+  header .title small{display:block;color:var(--muted);font-weight:600}
+  .controls{display:flex;align-items:center;gap:8px;}
+  button, .btn{
+    appearance:none;border:none;background:var(--accent);color:white;font-weight:800;
+    padding:14px 16px;border-radius:14px;box-shadow:var(--shadow);cursor:pointer;transition:transform .05s ease, opacity .2s ease;
+    font-size:1rem; line-height:1;
+  }
+  button.secondary{background:#334155;color:#e5e7eb;}
+  button.ghost{background:transparent;border:1px dashed rgba(255,255,255,.25);color:var(--text)}
+  button:active{transform:translateY(1px) scale(0.99)}
+  .screen{display:none;padding:18px;}
+  .screen.active{display:block;}
+  .hero{display:grid; gap:16px; padding:18px;}
+  .hero h1{margin:0;font-size:1.7rem;text-align:center}
+  .grid {display:grid; gap:10px; grid-template-columns:repeat(2,minmax(0,1fr));}
+  @media (min-width:560px){ .grid{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .qcard{display:grid; gap:14px; padding:16px; background:rgba(255,255,255,.04);
+    border:1px solid rgba(255,255,255,.08); border-radius:var(--radius-sm);}
+  .badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:8px 10px}
+  .muted{color:var(--muted)} .tiny{font-size:.85rem} .center{text-align:center} .divider{height:1px;background:rgba(255,255,255,.08);margin:8px 0 12px}
+  .hud{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .answers{display:grid;gap:10px}
+  .answers button{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 14px;text-align:left}
+  .answers .letter{font-weight:900;opacity:.85}
+  .fact{font-size:.96rem;line-height:1.35}
+  .tag{font-size:.85rem;color:var(--muted);font-weight:800}
+  .timer{
+    --p: 0; width:54px;height:54px;border-radius:50%;
+    background:
+      conic-gradient(var(--accent-2) calc(var(--p)*1%), rgba(255,255,255,.08) 0 100%),
+      radial-gradient(closest-side, #0000 74%, rgba(255,255,255,.12) 75% 79%, #0000 80%);
+    display:grid;place-items:center;font-weight:900
+  }
+  .timer span{font-size:.95rem}
+  .good{color:var(--good)} .bad{color:var(--bad)} .gold{color:var(--gold)}
+  .hidden{display:none !important}
+
+  /* Battle Map tile grid (Eastern U.S.) */
+  .mapGrid{display:grid;grid-template-columns:repeat(10, minmax(0,1fr));gap:6px;max-width:680px;margin:auto}
+  .tile{aspect-ratio:1;display:grid;place-items:center;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);font-weight:900}
+  .tile, .tile small{color:#111} /* black initials for readability */
+  .tile small{font-weight:800;opacity:.95}
+  .tile.correct{background:linear-gradient(0deg, rgba(34,197,94,.22), rgba(34,197,94,.22));border-color:rgba(34,197,94,.6)}
+  .tile.wrong{background:linear-gradient(0deg, rgba(239,68,68,.2), rgba(239,68,68,.2));border-color:rgba(239,68,68,.5)}
+
+  /* Timeline Drag */
+  .draglist{display:grid;gap:10px}
+  .drag-item{
+    display:flex;align-items:center;gap:10px;padding:12px 12px;border-radius:12px;
+    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+  }
+  .drag-handle{font-size:1.3rem;line-height:1;opacity:.85;cursor:grab;user-select:none}
+  .drag-item.dragging{opacity:.96;background:rgba(255,255,255,.08);outline:2px dashed rgba(255,255,255,.25)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <header>
+      <div class="title">
+        <div>History Sprint: USA</div>
+        <small>Zander Edition</small>
+      </div>
+      <div class="controls">
+        <button id="btnSettings" class="secondary" aria-label="Settings">☰</button>
+      </div>
+    </header>
+
+    <!-- Home Screen -->
+    <section id="screenHome" class="screen active">
+      <div class="hero">
+        <h1>Happy 19th, <span id="heroName">Zander</span>! 🎉</h1>
+        <div class="grid">
+          <button id="btnPlayTrivia">Trivia</button>
+          <button id="btnPlayFirst" class="secondary">Which Came First?</button>
+          <button id="btnPlayTimeline" class="secondary">Tap Order (3)</button>
+          <button id="btnPlayTimelineDrag" class="secondary">Timeline Drag (5)</button>
+          <button id="btnPlayTF" class="secondary">Lightning True/False</button>
+          <button id="btnPlayBlitz" class="secondary">🎯 19‑Second Blitz</button>
+          <button id="btnPlaySides" class="secondary">Patriot vs British</button>
+          <button id="btnPlayBattle" class="secondary">War Battle Map</button>
+          <button id="btnHow" class="ghost">How to Play</button>
+        </div>
+
+        <div class="qcard">
+          <div class="hud">
+            <div class="badge">High Score: <span id="highScore">0</span></div>
+            <div class="badge">Best Streak: <span id="bestStreak">0</span></div>
+          </div>
+          <div class="tiny muted">Scores save on this device.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Game Screen -->
+    <section id="screenGame" class="screen">
+      <div class="qcard">
+        <div class="hud">
+          <div class="timer" title="Time left"><span id="timeLeft">60</span></div>
+          <div class="badge">Score <span class="score" id="score">0</span></div>
+          <div class="badge">Streak <span class="streak" id="streak">0</span></div>
+        </div>
+        <div id="modeTag" class="tag">Mode: Trivia</div>
+        <div class="divider"></div>
+
+        <div id="questionArea">
+          <div id="qtext" style="font-size:1.15rem;font-weight:800;line-height:1.25"></div>
+          <div id="answers" class="answers"></div>
+        </div>
+
+        <div id="fact" class="fact muted hidden"></div>
+        <div class="divider"></div>
+
+        <div class="hud">
+          <button id="btnQuit" class="ghost">Quit</button>
+          <button id="btnCheck" class="secondary hidden">Check</button>
+          <span id="modeNote" class="tiny muted"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Results -->
+    <section id="screenResults" class="screen">
+      <div class="qcard">
+        <h2 style="margin:0 0 6px">Round Complete 🎯</h2>
+        <div class="hud">
+          <div class="badge">Score <span id="finalScore" class="score">0</span></div>
+          <div class="badge">Best Streak <span id="finalStreak" class="streak">0</span></div>
+          <div class="badge">Correct <span id="finalCorrect">0</span></div>
+        </div>
+        <div id="resultsMsg" class="fact" style="margin-top:8px"></div>
+        <div class="divider"></div>
+        <div class="grid">
+          <button id="btnReplay">Play Again</button>
+          <button id="btnShare" class="secondary">Share score</button>
+          <button id="btnHome" class="ghost">Back to Home</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Settings / About -->
+    <section id="screenDialog" class="screen">
+      <div class="qcard">
+        <h3 style="margin:0 0 8px">Settings</h3>
+        <div class="grid">
+          <button id="toggleSound" class="secondary">Sound: Off</button>
+          <button id="toggleHaptics" class="secondary">Haptics: On</button>
+        </div>
+        <div class="divider"></div>
+        <h3 style="margin:0 0 8px">About</h3>
+        <div class="fact">
+          Built as a birthday gift for Zander. Quick rounds, big taps, sticky facts.
+        </div>
+        <div class="divider"></div>
+        <div class="grid"><button id="btnCloseDialog" class="ghost">Close</button></div>
+      </div>
+    </section>
+
+    <!-- How-to -->
+    <section id="screenHow" class="screen">
+      <div class="qcard">
+        <h3 style="margin:0 0 6px">How to play</h3>
+        <ul class="fact">
+          <li><b>Trivia:</b> Multiple choice; answers are shuffled.</li>
+          <li><b>Which Came First?</b> Pick the earlier event.</li>
+          <li><b>Tap Order:</b> Tap 3 events in earliest→latest order.</li>
+          <li><b>Timeline Drag:</b> Drag 5 events into order, then tap <b>Check</b>.</li>
+          <li><b>True/False & Blitz:</b> Speedy statements; Blitz is a 19‑second sprint.</li>
+          <li><b>Patriot vs British:</b> See a name; tap the side they fought for (French allies count as Patriot).</li>
+          <li><b>War Battle Map:</b> Tap the state where the battle happened.</li>
+        </ul>
+        <div class="grid"><button id="btnCloseHow" class="ghost">Close</button></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- confetti layer -->
+<div class="confetti" id="confetti"></div>
+
+<script>
+/* ========= Utility ========= */
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+const clamp = (n, min, max) => Math.max(min, Math.min(n, max));
+const shuffle = (a) => { for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+const choice = (a) => a[Math.floor(Math.random()*a.length)];
+
+/* Micro confetti */
+function celebrateConfetti(burst=80){
+  const layer = $("#confetti");
+  for(let i=0;i<burst;i++){
+    const el = document.createElement("i");
+    const x = Math.random()*100, delay = Math.random()*200;
+    el.style.left = x+"vw";
+    el.style.background = `hsl(${Math.random()*360},90%,60%)`;
+    el.style.animation = `fall 2.6s linear ${delay/1000}s`;
+    el.style.position="fixed"; el.style.top="-20vh"; el.style.width="8px"; el.style.height="12px";
+    el.style.transform = `rotate(${Math.random()*180}deg)`;
+    layer.appendChild(el); setTimeout(()=>el.remove(), 2800+delay);
+  }
+}
+const st = document.createElement('style'); st.textContent = `@keyframes fall{to{transform:translateY(120vh) rotate(720deg);opacity:.9}}`; document.head.appendChild(st);
+
+/* Vibrate + tiny sounds */
+let audioCtx; function vibrate(ms){ if(state.haptics && navigator.vibrate) navigator.vibrate(ms); }
+function beep(freq=660, dur=0.07, type="sine", vol=0.02){
+  if(!state.sound) return;
+  try{
+    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = type; o.frequency.value = freq; g.gain.value = vol;
+    o.connect(g); g.connect(audioCtx.destination); o.start();
+    setTimeout(()=>{ o.stop(); }, dur*1000);
+  }catch(e){}
+}
+
+/* ========= Data ========= */
+const STATE_NAMES = { // used by battle map tiles
+  AL:"Alabama", AK:"Alaska", AZ:"Arizona", AR:"Arkansas", CA:"California", CO:"Colorado", CT:"Connecticut", DE:"Delaware", FL:"Florida", GA:"Georgia",
+  HI:"Hawaii", ID:"Idaho", IL:"Illinois", IN:"Indiana", IA:"Iowa", KS:"Kansas", KY:"Kentucky", LA:"Louisiana", ME:"Maine", MD:"Maryland",
+  MA:"Massachusetts", MI:"Michigan", MN:"Minnesota", MS:"Mississippi", MO:"Missouri", MT:"Montana", NE:"Nebraska", NV:"Nevada", NH:"New Hampshire", NJ:"New Jersey",
+  NM:"New Mexico", NY:"New York", NC:"North Carolina", ND:"North Dakota", OH:"Ohio", OK:"Oklahoma", OR:"Oregon", PA:"Pennsylvania", RI:"Rhode Island", SC:"South Carolina",
+  SD:"South Dakota", TN:"Tennessee", TX:"Texas", UT:"Utah", VT:"Vermont", VA:"Virginia", WA:"Washington", WV:"West Virginia", WI:"Wisconsin", WY:"Wyoming", DC:"District of Columbia"
+};
+
+/* Trivia (Revolution‑leaning, answers shuffled at render) */
+const TRIVIA = shuffle([
+  {q:"Which 1763 edict limited colonial settlement west of the Appalachians?", a:["Proclamation of 1763","Townshend Acts","Tea Act","Declaratory Act"], c:0, info:"Issued by George III after the French & Indian War."},
+  {q:"What 1764 law taxed molasses and sugar imports to the colonies?", a:["Sugar Act","Stamp Act","Tea Act","Townshend Acts"], c:0, info:"Also called the American Revenue Act."},
+  {q:"Which 1765 law placed a direct tax on printed materials?", a:["Stamp Act","Quartering Act","Tea Act","Declaratory Act"], c:0, info:"Sparked 'no taxation without representation.'"},
+  {q:"What did the Declaratory Act (1766) assert?", a:["Parliament's right to legislate for the colonies 'in all cases'","Repeal of all taxes","Colonial independence","Creation of a colonial parliament"], c:0, info:"Passed with the repeal of the Stamp Act."},
+  {q:"Which acts (1767) taxed glass, lead, paints, paper, and tea?", a:["Townshend Acts","Coercive Acts","Navigation Acts","Molasses Act"], c:0, info:"Most repealed in 1770 except the tea tax."},
+  {q:"What happened on March 5, 1770 in Boston?", a:["Boston Massacre","Boston Tea Party","Lexington & Concord","Gaspee Affair"], c:0, info:"Five colonists died after a confrontation with British soldiers."},
+  {q:"Which 1773 law prompted a famous harbor protest?", a:["Tea Act","Intolerable Acts","Sugar Act","Stamp Act"], c:0, info:"Led directly to the Boston Tea Party."},
+  {q:"What did colonists call the Coercive Acts (1774)?", a:["Intolerable Acts","Townshend Acts","Quebec Acts","Navigation Acts"], c:0, info:"Punishment for the Tea Party; closed Boston’s port."},
+  {q:"What gathering met in Philadelphia in 1774?", a:["First Continental Congress","Albany Congress","Second Continental Congress","Annapolis Convention"], c:0, info:"Coordinated colonial response to the Intolerable Acts."},
+  {q:"Where were the first battles of the Revolution fought (April 1775)?", a:["Lexington and Concord","Bunker Hill","Trenton","Saratoga"], c:0, info:"'The shot heard ’round the world.'"},
+  {q:"Who wrote Common Sense (1776), urging independence?", a:["Thomas Paine","Thomas Jefferson","John Adams","James Otis"], c:0, info:"Sold widely; shifted public opinion."},
+  {q:"When was the Declaration of Independence adopted?", a:["1776","1775","1781","1789"], c:0, info:"July 4, 1776."},
+  {q:"Who commanded the Continental Army?", a:["George Washington","Benedict Arnold","Horatio Gates","Nathanael Greene"], c:0, info:"Appointed by the Second Continental Congress."},
+  {q:"Which 1777 victory convinced France to ally with the U.S.?", a:["Saratoga","Bunker Hill","Trenton","Camden"], c:0, info:"Turning point of the war."},
+  {q:"Where did the army winter in harsh conditions (1777–78)?", a:["Valley Forge","Morristown","Charleston","Yorktown"], c:0, info:"Von Steuben drilled troops there."},
+  {q:"Who famously crossed the Delaware in December 1776?", a:["George Washington","John Paul Jones","Henry Knox","Charles Cornwallis"], c:0, info:"Surprised Hessians at Trenton."},
+  {q:"Which American traitor attempted to surrender West Point?", a:["Benedict Arnold","Charles Lee","Thomas Gage","John André"], c:0, info:"Defected to the British in 1780."},
+  {q:"Which French aristocrat aided the American cause?", a:["Marquis de Lafayette","Talleyrand","Rochambeau","Montcalm"], c:0, info:"Helped secure more French support."},
+  {q:"Which 1781 siege effectively ended major fighting?", a:["Yorktown","Cowpens","Guilford Courthouse","Monmouth"], c:0, info:"Cornwallis surrendered to Washington."},
+  {q:"Which treaty recognized U.S. independence?", a:["Treaty of Paris (1783)","Treaty of Ghent","Jay Treaty","Treaty of Guadalupe Hidalgo"], c:0, info:"Ended the Revolutionary War."},
+  {q:"What was America’s first national framework?", a:["Articles of Confederation","U.S. Constitution","Mayflower Compact","Northwest Ordinance"], c:0, info:"Ratified 1781; limited central powers."},
+  {q:"Which 1786–87 uprising spurred calls to revise the Articles?", a:["Shays’ Rebellion","Whiskey Rebellion","Bacon’s Rebellion","Nat Turner’s Rebellion"], c:0, info:"Veterans protested debts and taxes in Massachusetts."},
+  {q:"Where was the Constitutional Convention held (1787)?", a:["Philadelphia","New York","Boston","Richmond"], c:0, info:"Resulted in the U.S. Constitution."},
+  {q:"Who were primary authors of The Federalist Papers?", a:["Hamilton, Madison, Jay","Jefferson, Adams, Franklin","Henry, Mason, Randolph","Paine, Otis, Warren"], c:0, info:"Written to support ratification."},
+
+  /* broader U.S. */
+  {q:"Which case established judicial review?", a:["Marbury v. Madison (1803)","Brown v. Board","Dred Scott","Roe v. Wade"], c:0, info:"Courts can strike laws as unconstitutional."},
+  {q:"What 1803 land deal doubled U.S. territory?", a:["Louisiana Purchase","Gadsden Purchase","Alaska Purchase","Oregon Treaty"], c:0, info:"Bought from France."},
+  {q:"Which expedition explored the Louisiana Purchase?", a:["Lewis and Clark","Pike Expedition","Fremont Expedition","Hudson Expedition"], c:0, info:"1804–1806 to the Pacific and back."},
+  {q:"Which war included the Battle of New Orleans (1815)?", a:["War of 1812","Mexican–American War","Civil War","Revolutionary War"], c:0, info:"Fought after the Treaty of Ghent was signed."},
+  {q:"Which policy warned Europe against colonizing the Americas (1823)?", a:["Monroe Doctrine","Open Door Policy","Roosevelt Corollary","Truman Doctrine"], c:0, info:"Cornerstone of early U.S. foreign policy."},
+  {q:"Which 1830 law led to the Trail of Tears?", a:["Indian Removal Act","Homestead Act","Kansas–Nebraska Act","Dawes Act"], c:0, info:"Forced relocation of Native nations."},
+  {q:"Which 1848 convention launched an organized women’s rights movement?", a:["Seneca Falls","Hartford","Richmond","Springfield"], c:0, info:"Issued the Declaration of Sentiments."},
+  {q:"Which 1854 act allowed popular sovereignty on slavery?", a:["Kansas–Nebraska Act","Compromise of 1850","Missouri Compromise","Wilmot Proviso"], c:0, info:"Led to 'Bleeding Kansas.'"},
+  {q:"Which 1857 case denied citizenship to African Americans?", a:["Dred Scott v. Sandford","Plessy v. Ferguson","Brown v. Board","Korematsu v. U.S."], c:0, info:"Later overturned by amendments and rulings."},
+  {q:"Which 1863 order declared enslaved people in rebelling states free?", a:["Emancipation Proclamation","13th Amendment","Civil Rights Act","Wade–Davis Bill"], c:0, info:"Shifted the war’s purpose toward emancipation."},
+  {q:"Which 1863 battle is often called the Civil War’s turning point?", a:["Gettysburg","Antietam","Vicksburg","Shiloh"], c:0, info:"Union victory in Pennsylvania."},
+  {q:"Which amendment abolished slavery (1865)?", a:["13th","14th","15th","12th"], c:0, info:"Ratified December 1865."},
+  {q:"Which 1898 war expanded U.S. influence abroad?", a:["Spanish–American War","Mexican–American War","War of 1812","Boer War"], c:0, info:"Fought in the Caribbean and Pacific."},
+  {q:"When did the U.S. enter World War I?", a:["1917","1914","1918","1919"], c:0, info:"Declared war on Germany in April."},
+  {q:"Which amendment guaranteed women’s suffrage nationwide?", a:["19th (1920)","18th","21st","14th"], c:0, info:"Ratified August 1920."},
+  {q:"Which program series began under FDR in 1933?", a:["New Deal","Fair Deal","Square Deal","Great Society"], c:0, info:"Relief, recovery, reform."},
+  {q:"What event brought the U.S. into WWII?", a:["Attack on Pearl Harbor","Invasion of Poland","Battle of Britain","D‑Day"], c:0, info:"December 7, 1941."},
+  {q:"Which 1954 case struck down school segregation?", a:["Brown v. Board of Education","Plessy v. Ferguson","Korematsu v. U.S.","Regents v. Bakke"], c:0, info:"'Separate educational facilities are inherently unequal.'"},
+  {q:"Which 1964 law outlawed segregation in public places?", a:["Civil Rights Act","Voting Rights Act","Fair Housing Act","Taft-Hartley Act"], c:0, info:"Also banned employment discrimination."},
+  {q:"Which 1969 mission landed humans on the Moon?", a:["Apollo 11","Apollo 8","Apollo 13","Gemini 7"], c:0, info:"Armstrong and Aldrin walked on the Moon."},
+  {q:"Which 1974 event led to a presidential resignation?", a:["Watergate","Teapot Dome","Iran-Contra","Whitewater"], c:0, info:"Nixon resigned August 1974."},
+  {q:"Operation Desert Storm is also known as which conflict?", a:["Gulf War (1991)","Kosovo War","Vietnam War","Iraq War (2003)"], c:0, info:"Coalition expelled Iraqi forces from Kuwait."},
+  {q:"Which 2015 case legalized same‑sex marriage nationwide?", a:["Obergefell v. Hodges","Loving v. Virginia","Baker v. Nelson","Bowers v. Hardwick"], c:0, info:"States must license and recognize same‑sex marriages."},
+]);
+
+/* Events for ordering games */
+const EVENTS = shuffle([
+  {e:"Stamp Act", y:1765},{e:"Boston Massacre", y:1770},{e:"Boston Tea Party", y:1773},
+  {e:"Lexington & Concord", y:1775},{e:"Common Sense", y:1776},{e:"Declaration of Independence", y:1776},
+  {e:"Saratoga", y:1777},{e:"Valley Forge", y:1777},{e:"Yorktown", y:1781},{e:"Treaty of Paris", y:1783},
+  {e:"Constitutional Convention", y:1787},{e:"Bill of Rights", y:1791},
+  {e:"Louisiana Purchase", y:1803},{e:"War of 1812 begins", y:1812},{e:"Monroe Doctrine", y:1823},
+  {e:"Indian Removal Act", y:1830},{e:"Seneca Falls Convention", y:1848},
+  {e:"Dred Scott", y:1857},{e:"Civil War begins", y:1861},{e:"Emancipation Proclamation", y:1863},
+  {e:"Gettysburg", y:1863},{e:"13th Amendment", y:1865},{e:"Spanish–American War", y:1898},
+  {e:"Wright brothers' flight", y:1903},{e:"U.S. enters WWI", y:1917},{e:"19th Amendment", y:1920},
+  {e:"Stock Market Crash", y:1929},{e:"New Deal", y:1933},{e:"Pearl Harbor", y:1941},
+  {e:"D‑Day", y:1944},{e:"Brown v. Board", y:1954},{e:"Civil Rights Act", y:1964},
+  {e:"Voting Rights Act", y:1965},{e:"Apollo 11", y:1969},{e:"Watergate resignation", y:1974},
+  {e:"Gulf War", y:1991},{e:"September 11 attacks", y:2001},{e:"Affordable Care Act", y:2010},
+  {e:"Obergefell v. Hodges", y:2015}
+]);
+
+/* True/False items */
+const TF = shuffle([
+  {s:"The Proclamation of 1763 restricted settlement west of the Appalachians.", a:true, info:"Aimed to stabilize relations with Native nations."},
+  {s:"Common Sense was written by Thomas Jefferson.", a:false, info:"It was Thomas Paine."},
+  {s:"The Boston Tea Party occurred before the Boston Massacre.", a:false, info:"Massacre 1770; Tea Party 1773."},
+  {s:"Washington crossed the Delaware in winter 1776.", a:true, info:"Surprised Hessians at Trenton."},
+  {s:"The victory at Saratoga helped secure a French alliance.", a:true, info:"Turning point in 1777."},
+  {s:"Cornwallis surrendered at Yorktown in 1781.", a:true, info:"Effectively ended major fighting."},
+  {s:"Judicial review began with Brown v. Board (1954).", a:false, info:"Established in Marbury v. Madison (1803)."},
+  {s:"The Louisiana Purchase was from Spain.", a:false, info:"It was from France."},
+  {s:"The 13th Amendment abolished slavery.", a:true, info:"Ratified 1865."},
+  {s:"D‑Day opened the Western Front in Europe.", a:true, info:"June 6, 1944."},
+  {s:"Apollo 11 landed on the Moon in 1969.", a:true, info:"Armstrong and Aldrin walked on the Moon."},
+]);
+
+/* Patriot vs British (new super-simple game) */
+const SIDES = shuffle([
+  {name:"George Washington", side:"Patriot", info:"Commander‑in‑Chief of the Continental Army."},
+  {name:"King George III", side:"British", info:"Monarch of Great Britain during the war."},
+  {name:"Charles Cornwallis", side:"British", info:"Surrendered at Yorktown (1781)."},
+  {name:"Benedict Arnold", side:"British", info:"Defected in 1780; plotted to surrender West Point."},
+  {name:"Marquis de Lafayette", side:"Patriot", info:"French ally and general in the Continental Army."},
+  {name:"Thomas Paine", side:"Patriot", info:"Author of Common Sense (1776)."},
+  {name:"John Adams", side:"Patriot", info:"Independence advocate; diplomat to Europe."},
+  {name:"Samuel Adams", side:"Patriot", info:"Sons of Liberty organizer; Massachusetts leader."},
+  {name:"Thomas Gage", side:"British", info:"Military governor of Massachusetts; ordered Lexington & Concord."},
+  {name:"William Howe", side:"British", info:"British commander‑in‑chief 1775–1778."},
+  {name:"Henry Clinton", side:"British", info:"British commander‑in‑chief 1778–1782."},
+  {name:"John Burgoyne", side:"British", info:"Surrendered at Saratoga (1777)."},
+  {name:"Nathanael Greene", side:"Patriot", info:"Led the Southern campaign vs Cornwallis."},
+  {name:"Horatio Gates", side:"Patriot", info:"Linked to the Saratoga victory."},
+  {name:"John Paul Jones", side:"Patriot", info:"Naval captain—“I have not yet begun to fight!”."},
+  {name:"Francis Marion", side:"Patriot", info:"The 'Swamp Fox'—guerrilla leader in the South."},
+  {name:"Banastre Tarleton", side:"British", info:"Cavalry officer; infamous in the Carolinas."},
+  {name:"Baron von Steuben", side:"Patriot", info:"Prussian drillmaster at Valley Forge."},
+  {name:"Comte de Rochambeau", side:"Patriot", info:"French general who helped at Yorktown."},
+  {name:"John André", side:"British", info:"Captured spy in the Arnold conspiracy."}
+]);
+
+/* Battles for War Map */
+const BATTLES = shuffle([
+  {name:"Lexington & Concord (1775)", state:"MA", info:"First battles; the 'shot heard ’round the world.'"},
+  {name:"Bunker Hill (1775)", state:"MA", info:"Costly British victory near Boston."},
+  {name:"Trenton (1776)", state:"NJ", info:"After Washington’s crossing; surprise win."},
+  {name:"Princeton (1777)", state:"NJ", info:"Follow‑up success boosting morale."},
+  {name:"Brandywine (1777)", state:"PA", info:"British took Philadelphia soon after."},
+  {name:"Saratoga (1777)", state:"NY", info:"Turning point; helped win French alliance."},
+  {name:"Monmouth (1778)", state:"NJ", info:"Scorching heat; Molly Pitcher lore."},
+  {name:"Cowpens (1781)", state:"SC", info:"Morgan’s double‑envelopment."},
+  {name:"Guilford Courthouse (1781)", state:"NC", info:"Pyrrhic British victory; weakened Cornwallis."},
+  {name:"Yorktown (1781)", state:"VA", info:"Cornwallis surrendered; major fighting ended."},
+  {name:"Kings Mountain (1780)", state:"SC", info:"Patriot militia victory in the backcountry."},
+  {name:"Savannah (1779)", state:"GA", info:"Failed Franco‑American siege."},
+  {name:"Charleston (1780)", state:"SC", info:"Major American surrender; heavy loss."},
+  {name:"Ticonderoga (1775)", state:"NY", info:"Captured cannons rolled to Boston by Knox."},
+]);
+
+/* Eastern U.S. tile positions for battle map */
+const TILE_POS = {
+  ME:[9,1], NH:[8,2], VT:[7,2], MA:[9,2], CT:[9,3], RI:[10,2],
+  NY:[7,3], PA:[7,4], NJ:[8,4], DE:[9,4], MD:[8,5], WV:[7,5],
+  VA:[8,6], NC:[9,6], SC:[9,7], GA:[9,8], DC:[9,5]
+};
+
+/* ========= State ========= */
+const state = {
+  mode: "trivia", // trivia | first | timeline | tf | blitz | sides | battle | tdrag
+  time: 60, baseTime: 60, score: 0, streak: 0, bestStreak: parseInt(localStorage.getItem("hs_bestStreak")||"0",10),
+  highScore: parseInt(localStorage.getItem("hs_highScore")||"0",10), correct: 0, question: null, timerId: null,
+  sound: false, haptics: true, name: "Zander", shuffleMap: null, timelinePick: [],
+};
+
+/* ========= DOM ========= */
+const screens = { home:$("#screenHome"), game:$("#screenGame"), results:$("#screenResults"), dialog:$("#screenDialog"), how:$("#screenHow") };
+const els = {
+  heroName: $("#heroName"), highScore: $("#highScore"), bestStreak: $("#bestStreak"),
+  timeLeft: $("#timeLeft"), score: $("#score"), streak: $("#streak"),
+  modeTag: $("#modeTag"), modeNote: $("#modeNote"),
+  qtext: $("#qtext"), answers: $("#answers"), fact: $("#fact"),
+  finalScore: $("#finalScore"), finalStreak: $("#finalStreak"), finalCorrect: $("#finalCorrect"),
+  resultsMsg: $("#resultsMsg"), btnCheck: $("#btnCheck")
+};
+
+/* ========= Navigation / Setup ========= */
+function show(which){ Object.values(screens).forEach(s=>s.classList.remove("active")); screens[which].classList.add("active"); }
+function setName(n){ state.name = (n||"").trim() || "Zander"; els.heroName.textContent = state.name; }
+
+/* ========= Timer ========= */
+function endGame(){
+  clearInterval(state.timerId);
+  els.finalScore.textContent = state.score;
+  els.finalStreak.textContent = state.streak;
+  els.finalCorrect.textContent = state.correct;
+  const hs = parseInt(localStorage.getItem("hs_highScore")||"0",10);
+  const bs = parseInt(localStorage.getItem("hs_bestStreak")||"0",10);
+  let msgs = [];
+  if(state.score>hs){ localStorage.setItem("hs_highScore", state.score); msgs.push("New high score! 🏅"); }
+  if(state.streak>bs){ localStorage.setItem("hs_bestStreak", state.streak); msgs.push("New best streak! 🔥"); }
+  if(state.streak>=19){ msgs.push("Birthday Badge unlocked: 19‑Hit Streak ✨"); celebrateConfetti(120); }
+  els.resultsMsg.textContent = msgs.join(" ") || "Nice run! Ready for another?";
+  updateHomeStats(); show("results");
+}
+function tickTimer(start=false){
+  if(start){
+    updateTimerUI(); clearInterval(state.timerId);
+    state.timerId = setInterval(()=>{
+      state.time -= 1; if(state.time<=0){ state.time = 0; updateTimerUI(); endGame(); } else updateTimerUI();
+    }, 1000);
+  } else updateTimerUI();
+}
+function updateTimerUI(){ els.timeLeft.textContent = state.time; const p = (state.time/state.baseTime)*100; $(".timer").style.setProperty("--p", p); }
+
+/* ========= Start / Next ========= */
+function startGame(mode="trivia", customTime=null){
+  state.mode = mode; state.baseTime = customTime ?? (mode==="blitz" ? 19 : 60);
+  state.time = state.baseTime; state.score = 0; state.streak = 0; state.correct = 0; state.shuffleMap = null; state.timelinePick = [];
+  els.score.textContent = "0"; els.streak.textContent = "0"; els.fact.classList.add("hidden"); els.answers.innerHTML = "";
+
+  const label = {
+    trivia:"Trivia", first:"Which Came First?", timeline:"Tap Order (3)", tdrag:"Timeline Drag (5)",
+    tf:"Lightning True/False", blitz:"19‑Second Blitz", sides:"Patriot vs British", battle:"War Battle Map"
+  }[mode];
+  els.modeTag.textContent = "Mode: " + label;
+  els.modeNote.textContent =
+    (mode==="trivia" || mode==="first" || mode==="timeline" || mode==="sides" || mode==="battle")
+      ? "+3s on correct • −2s on wrong • Streak bonus"
+      : mode==="tf" ? "+2s on correct • −2s on wrong • Streak bonus"
+      : mode==="tdrag" ? "Drag to reorder • Tap Check • +6s on correct • −4s on wrong"
+      : "19 seconds • No time bonuses • Go fast!";
+
+  els.btnCheck.classList.toggle("hidden", mode!=="tdrag");
+  show("game"); tickTimer(true); nextQuestion();
+}
+function nextQuestion(){
+  els.fact.classList.add("hidden"); els.answers.innerHTML = "";
+  if(state.mode==="trivia"){ state.question = choice(TRIVIA); renderTrivia(state.question); }
+  else if(state.mode==="first"){ state.question = makeFirstQuestion(); renderFirst(state.question); }
+  else if(state.mode==="timeline"){ state.question = makeTimelineQuestion(); renderTimeline(state.question); }
+  else if(state.mode==="tf" || state.mode==="blitz"){ state.question = choice(TF); renderTF(state.question); }
+  else if(state.mode==="sides"){ state.question = makeSidesQuestion(); renderSides(state.question); }
+  else if(state.mode==="battle"){ state.question = makeBattleQuestion(); renderBattle(state.question); }
+  else if(state.mode==="tdrag"){ state.question = makeDragQuestion(); renderDrag(state.question); }
+}
+
+/* ========= Scoring helper ========= */
+function doScore(correct, basePts, timeDelta){
+  if(correct){
+    state.correct++; state.streak++;
+    const bonus = Math.min(state.streak*10, 200);
+    state.score += basePts + bonus;
+    state.time = clamp(state.time + Math.max(0,timeDelta), 0, state.baseTime);
+    vibrate(10); beep(740,0.08,"triangle",0.03);
+  }else{
+    state.streak = 0;
+    state.time = clamp(state.time + Math.min(0,timeDelta), 0, state.baseTime);
+    vibrate([5,20,5]); beep(220,0.08,"sawtooth",0.025);
+  }
+  els.score.textContent = state.score; els.streak.textContent = state.streak;
+}
+
+/* ========= Trivia ========= */
+function renderTrivia(q){
+  els.qtext.textContent = q.q;
+  const indices = shuffle([0,1,2,3]); state.shuffleMap = indices;
+  const letters = ["A","B","C","D"];
+  indices.forEach((origIndex, pos)=>{
+    const btn = document.createElement("button");
+    btn.innerHTML = `<span class="letter">${letters[pos]}</span> <span>${q.a[origIndex]}</span>`;
+    btn.onclick = ()=>answerTrivia(pos);
+    els.answers.appendChild(btn);
+  });
+}
+function answerTrivia(chosenPos){
+  const q = state.question; const correctPos = state.shuffleMap.indexOf(q.c);
+  const buttons = $$("#answers button");
+  buttons.forEach((b,i)=>{
+    if(i===correctPos){ b.style.background = "linear-gradient(0deg, rgba(34,197,94,.25), rgba(34,197,94,.25))"; b.style.border="1px solid rgba(34,197,94,.6)"; }
+    else if(i===chosenPos){ b.style.background = "linear-gradient(0deg, rgba(239,68,68,.2), rgba(239,68,68,.2))"; b.style.border="1px solid rgba(239,68,68,.5)"; }
+    b.disabled = true;
+  });
+  const correct = chosenPos===correctPos;
+  if(correct){ doScore(true, 100, 3); els.fact.textContent = q.info||""; }
+  else{ doScore(false, 0, -2); els.fact.textContent = "Answer: "+q.a[q.c]+(q.info? " — "+q.info:""); }
+  els.fact.classList.remove("hidden"); tickTimer(); setTimeout(nextQuestion, 650);
+}
+
+/* ========= Which Came First? ========= */
+function makeFirstQuestion(){ let a=choice(EVENTS), b=choice(EVENTS); while(b===a || b.y===a.y){ b=choice(EVENTS); }
+  const earlier = a.y<=b.y ? a : b; const later = earlier===a ? b : a; const shown = Math.random()<0.5 ? [earlier,later] : [later,earlier];
+  return {earlier,later,shown}; }
+function renderFirst(q){
+  els.qtext.textContent = "Which happened first?";
+  const letters=["A","B"];
+  q.shown.forEach((ev,i)=>{
+    const btn = document.createElement("button");
+    btn.innerHTML = `<span class="letter">${letters[i]}</span> <span>${ev.e}</span> <span class="tag">?</span>`;
+    btn.onclick = ()=>answerFirst(ev);
+    els.answers.appendChild(btn);
+  });
+}
+function answerFirst(chosen){
+  const {earlier,later} = state.question; const buttons = $$("#answers button"); buttons.forEach(b=>b.disabled=true);
+  const correct = chosen===earlier;
+  buttons.forEach(b=>{
+    if(b.textContent.includes(earlier.e)){ b.style.background="linear-gradient(0deg, rgba(34,197,94,.25), rgba(34,197,94,.25))"; b.style.border="1px solid rgba(34,197,94,.6)"; }
+    else{ b.style.background="linear-gradient(0deg, rgba(239,68,68,.2), rgba(239,68,68,.2))"; b.style.border="1px solid rgba(239,68,68,.5)"; }
+  });
+  if(correct){ doScore(true, 80, 3); els.fact.textContent = `Earlier: ${earlier.e} (${earlier.y}). Later: ${later.e} (${later.y}).`; }
+  else{ doScore(false, 0, -2); els.fact.textContent = `Earlier was ${earlier.e} (${earlier.y}).`; }
+  els.fact.classList.remove("hidden"); tickTimer(); setTimeout(nextQuestion, 700);
+}
+
+/* ========= Tap Order (3) ========= */
+function makeTimelineQuestion(){
+  let picks = shuffle(EVENTS.slice()).slice(0,3);
+  while(new Set(picks.map(p=>p.y)).size<3){ picks = shuffle(EVENTS.slice()).slice(0,3); }
+  return { trio: picks };
+}
+function renderTimeline(q){
+  els.qtext.textContent = "Tap in chronological order (earliest → latest).";
+  const letters = ["A","B","C"];
+  const display = shuffle(q.trio.slice());
+  display.forEach((ev, i)=>{
+    const btn = document.createElement("button");
+    btn.innerHTML = `<span class="letter">${letters[i]}</span> <span>${ev.e}</span> <span class="tag">?</span>`;
+    btn.dataset.year = ev.y;
+    btn.onclick = ()=>answerTimeline(btn, ev);
+    els.answers.appendChild(btn);
+  });
+}
+function answerTimeline(btn, ev){
+  if(btn.disabled) return;
+  btn.disabled = true; state.timelinePick.push(ev);
+  btn.style.opacity = .9; btn.querySelector(".tag").textContent = `${ev.y}`;
+  if(state.timelinePick.length<3) return;
+  const correctOrder = state.timelinePick.slice().sort((a,b)=>a.y-b.y).map(o=>o.e).join("|");
+  const pickedOrder = state.timelinePick.map(o=>o.e).join("|");
+  const buttons = $$("#answers button");
+  if(pickedOrder===correctOrder){
+    doScore(true, 120, 3);
+    els.fact.textContent = state.timelinePick.slice().sort((a,b)=>a.y-b.y).map(o=>`${o.e} (${o.y})`).join(" → ");
+    buttons.forEach(b=>{ b.style.background="linear-gradient(0deg, rgba(34,197,94,.25), rgba(34,197,94,.25))"; b.style.border="1px solid rgba(34,197,94,.6)"; });
+  }else{
+    doScore(false, 0, -2);
+    els.fact.textContent = "Correct order: " + state.timelinePick.slice().sort((a,b)=>a.y-b.y).map(o=>`${o.e} (${o.y})`).join(" → ");
+    buttons.forEach(b=>{ b.style.background="linear-gradient(0deg, rgba(250,204,21,.18), rgba(250,204,21,.18))"; b.style.border="1px solid rgba(250,204,21,.5)"; });
+  }
+  els.fact.classList.remove("hidden"); tickTimer(); setTimeout(nextQuestion, 850);
+}
+
+/* ========= True/False (+ Blitz) ========= */
+function renderTF(item){
+  els.qtext.textContent = item.s;
+  const opts = shuffle(["True","False"]);
+  opts.forEach(label=>{
+    const btn = document.createElement("button");
+    btn.innerHTML = `<span class="letter">${label[0]}</span> <span>${label}</span>`;
+    btn.onclick = ()=>answerTF(label==="True");
+    els.answers.appendChild(btn);
+  });
+}
+function answerTF(chosenTrue){
+  const item = state.question; const buttons = $$("#answers button"); buttons.forEach(b=>b.disabled=true);
+  const correct = chosenTrue===item.a;
+  buttons.forEach(b=>{
+    const isTrue = b.textContent.includes("True");
+    if(isTrue===item.a){ b.style.background="linear-gradient(0deg, rgba(34,197,94,.25), rgba(34,197,94,.25))"; b.style.border="1px solid rgba(34,197,94,.6)"; }
+    else{ b.style.background="linear-gradient(0deg, rgba(239,68,68,.2), rgba(239,68,68,.2))"; b.style.border="1px solid rgba(239,68,68,.5)"; }
+  });
+  if(state.mode==="blitz"){
+    if(correct){ state.correct++; state.streak++; state.score += 70 + Math.min(state.streak*5, 80); vibrate(10); beep(700,0.07,"triangle",0.03); }
+    else{ state.streak = 0; vibrate([5,20,5]); beep(220,0.07,"sawtooth",0.025); }
+    els.score.textContent = state.score; els.streak.textContent = state.streak;
+  }else{
+    if(correct){ doScore(true, 70, 2); } else { doScore(false, 0, -2); }
+  }
+  els.fact.textContent = (correct? "Correct — " : "Answer: ") + (item.info||"");
+  els.fact.classList.remove("hidden"); tickTimer(); setTimeout(nextQuestion, 550);
+}
+
+/* ========= Patriot vs British (NEW) ========= */
+function makeSidesQuestion(){
+  return choice(SIDES);
+}
+function renderSides(item){
+  els.qtext.textContent = `Which side? ${item.name}`;
+  const opts = shuffle(["Patriot","British"]);
+  opts.forEach(label=>{
+    const btn = document.createElement("button");
+    btn.innerHTML = `<span class="letter">${label[0]}</span> <span>${label}</span>`;
+    btn.onclick = ()=>answerSides(label);
+    els.answers.appendChild(btn);
+  });
+}
+function answerSides(chosen){
+  const item = state.question;
+  const buttons = $$("#answers button"); buttons.forEach(b=>b.disabled=true);
+  const correct = chosen===item.side;
+
+  buttons.forEach(b=>{
+    const isPat = b.textContent.includes("Patriot");
+    const isBri = b.textContent.includes("British");
+    const isRight = (item.side==="Patriot" && isPat) || (item.side==="British" && isBri);
+    if(isRight){
+      b.style.background="linear-gradient(0deg, rgba(34,197,94,.25), rgba(34,197,94,.25))";
+      b.style.border="1px solid rgba(34,197,94,.6)";
+    }else if(b.textContent.includes(chosen)){
+      b.style.background="linear-gradient(0deg, rgba(239,68,68,.2), rgba(239,68,68,.2))";
+      b.style.border="1px solid rgba(239,68,68,.5)";
+    }
+  });
+
+  if(correct){ doScore(true, 90, 3); els.fact.textContent = `${item.side} — ${item.info}`; }
+  else{ doScore(false, 0, -2); els.fact.textContent = `Answer: ${item.side}. ${item.info}`; }
+  els.fact.classList.remove("hidden"); tickTimer(); setTimeout(nextQuestion, 600);
+}
+
+/* ========= War Battle Map ========= */
+function makeBattleQuestion(){ return { battle: choice(BATTLES) }; }
+function renderBattle(q){
+  els.qtext.textContent = `Tap the state for: ${q.battle.name}`;
+  const grid = document.createElement("div"); grid.className="mapGrid";
+  const uniqueStates = Array.from(new Set(BATTLES.map(b=>b.state)));
+  uniqueStates.forEach(ab=>{
+    const pos = TILE_POS[ab]; if(!pos) return;
+    const tile = document.createElement("button");
+    tile.className="tile"; tile.style.gridColumn = pos[0]; tile.style.gridRow = pos[1];
+    tile.innerHTML = `<small>${ab}</small>`;
+    tile.onclick = ()=>answerBattle(ab, tile);
+    grid.appendChild(tile);
+  });
+  els.answers.appendChild(grid);
+}
+function answerBattle(selectedAbbr, tileEl){
+  const { battle } = state.question; const tiles = $$(".tile"); tiles.forEach(t=>t.disabled=true);
+  const correct = selectedAbbr===battle.state;
+  tiles.forEach(t=>{
+    const isCorrect = t.textContent.includes(battle.state);
+    if(isCorrect) t.classList.add("correct");
+    if(t===tileEl && !isCorrect) t.classList.add("wrong");
+  });
+  if(correct){ doScore(true, 90, 3); els.fact.textContent = battle.info; }
+  else{ doScore(false, 0, -2); els.fact.textContent = `Correct state: ${battle.state}. ${battle.info}`; }
+  els.fact.classList.remove("hidden"); tickTimer(); setTimeout(nextQuestion, 900);
+}
+
+/* ========= Timeline Drag (5) ========= */
+function makeDragQuestion(){
+  const pool = shuffle(EVENTS.slice()); let picks = pool.slice(0,5);
+  const years = new Set(picks.map(p=>p.y)); if(years.size<5) return makeDragQuestion();
+  return { list: picks };
+}
+function renderDrag(q){
+  els.qtext.textContent = "Drag into earliest → latest, then tap Check.";
+  els.btnCheck.classList.remove("hidden");
+
+  const list = document.createElement("div"); list.className="draglist"; list.id="draglist";
+  shuffle(q.list.slice()).forEach((ev)=>{
+    const item = document.createElement("div");
+    item.className="drag-item"; item.dataset.year = ev.y;
+    item.innerHTML = `<div class="drag-handle" title="Drag">☰</div><div style="font-weight:800">${ev.e}</div>`;
+    attachDragBehavior(item, list); list.appendChild(item);
+  });
+  els.answers.appendChild(list);
+
+  els.btnCheck.onclick = ()=>{
+    const items = $$("#draglist .drag-item"); const years = items.map(i=>parseInt(i.dataset.year,10));
+    const sorted = years.slice().sort((a,b)=>a-b);
+    const correct = years.every((y,i)=>y===sorted[i]);
+    if(correct){ doScore(true, 140, 6); els.fact.textContent = "Perfect order!"; }
+    else{
+      doScore(false, 0, -4);
+      const correctStr = items.slice().sort((a,b)=>parseInt(a.dataset.year)-parseInt(b.dataset.year))
+        .map(i=>`${i.querySelector("div:nth-child(2)").textContent}`).join(" → ");
+      els.fact.textContent = "Correct order: " + correctStr;
+    }
+    els.fact.classList.remove("hidden"); tickTimer(); setTimeout(()=>{ els.btnCheck.classList.add("hidden"); nextQuestion(); }, 900);
+  };
+}
+function attachDragBehavior(item, container){
+  const handle = item.querySelector(".drag-handle"); let startY=0;
+  function onDown(e){
+    e.preventDefault();
+    startY = e.clientY|| (e.touches && e.touches[0].clientY) || 0;
+    item.classList.add("dragging"); item.setPointerCapture?.(e.pointerId);
+    window.addEventListener("pointermove", onMove); window.addEventListener("pointerup", onUp, {once:true});
+  }
+  function onMove(e){
+    const y = e.clientY || 0; const dy = y - startY; item.style.transform = `translateY(${dy}px)`;
+    const siblings = [...container.children].filter(ch=>ch!==item); let insertBefore = null;
+    for(const sib of siblings){ const r = sib.getBoundingClientRect(); if(y < r.top + r.height/2){ insertBefore = sib; break; } }
+    container.insertBefore(item, insertBefore);
+  }
+  function onUp(){ item.style.transform = ""; item.classList.remove("dragging"); window.removeEventListener("pointermove", onMove); }
+  handle.addEventListener("pointerdown", onDown);
+}
+
+/* ========= Settings & Sharing ========= */
+function updateHomeStats(){ $("#highScore").textContent = localStorage.getItem("hs_highScore")||"0"; $("#bestStreak").textContent = localStorage.getItem("hs_bestStreak")||"0"; }
+function shareScore(){
+  const text = `${state.name} just scored ${els.finalScore.textContent} in History Sprint: USA!`; const url = location.href;
+  if(navigator.share){ navigator.share({ title:"History Sprint: USA", text, url }).catch(()=>{}); }
+  else{ navigator.clipboard?.writeText(text+" "+url); alert("Copied score to clipboard!"); }
+}
+
+/* ========= Wiring ========= */
+$("#btnPlayTrivia").onclick      = ()=> startGame("trivia");
+$("#btnPlayFirst").onclick       = ()=> startGame("first");
+$("#btnPlayTimeline").onclick    = ()=> startGame("timeline");
+$("#btnPlayTimelineDrag").onclick= ()=> startGame("tdrag");
+$("#btnPlayTF").onclick          = ()=> startGame("tf");
+$("#btnPlayBlitz").onclick       = ()=> startGame("blitz", 19);
+$("#btnPlaySides").onclick       = ()=> startGame("sides");
+$("#btnPlayBattle").onclick      = ()=> startGame("battle");
+
+$("#btnQuit").onclick  = ()=> endGame();
+$("#btnReplay").onclick= ()=> { show("home"); startGame(state.mode, state.mode==="blitz" ? 19 : null); };
+$("#btnHome").onclick  = ()=> show("home");
+$("#btnShare").onclick = shareScore;
+
+$("#btnSettings").onclick = ()=> show("dialog");
+$("#btnCloseDialog").onclick = ()=> show("home");
+
+$("#btnHow").onclick = ()=> show("how");
+$("#btnCloseHow").onclick = ()=> show("home");
+
+$("#toggleSound").onclick = (e)=>{ state.sound = !state.sound; e.target.textContent = "Sound: " + (state.sound?"On":"Off"); if(state.sound) beep(600,0.08); };
+$("#toggleHaptics").onclick = (e)=>{ state.haptics = !state.haptics; e.target.textContent = "Haptics: " + (state.haptics?"On":"Off"); if(state.haptics) vibrate(12); };
+
+/* Init */
+(function init(){
+  try{ const params = new URLSearchParams(location.search); const n = params.get("name"); if(n){ setName(n); } else { setName("Zander"); } }catch(e){}
+  updateHomeStats();
+  if((state.name||"").toLowerCase()==="zander"){ setTimeout(()=> celebrateConfetti(100), 400); }
+})();
+</script>
+</body>
+</html>
